@@ -34,6 +34,15 @@ const exportsCollection = database.collection("exports");
 
 
 
+app.get('/products', async (req, res) => {
+  try {
+    const products = await productsCollection.find({}).toArray();
+    res.send(products);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: 'Server error' });
+  }
+});
 
 
 
@@ -49,9 +58,9 @@ run().catch(console.dir);
 
 
 
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-});
+// app.get('/', (req, res) => {
+//   res.send('Hello World!');
+// });
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
