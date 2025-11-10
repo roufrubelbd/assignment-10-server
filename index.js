@@ -29,53 +29,53 @@ async function run() {
     const importsCollection = database.collection("imports");
     const exportsCollection = database.collection("exports");
 
-
     // POST - imports
-app.post("/imports/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { quantity, userEmail } = req.body;
-    const product = await productsCollection.findOne({ _id: new ObjectId(id) });
+    app.post("/imports/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { quantity, userEmail } = req.body;
+        const product = await productsCollection.findOne({
+          _id: new ObjectId(id),
+        });
 
-    if (!product) {
-      return res.status(404).send({ message: "Product not found" });
-    }
+        if (!product) {
+          return res.status(404).send({ message: "Product not found" });
+        }
 
-    if (quantity <= 0 || quantity > product.availableQuantity) {
-      return res.status(400).send({ message: "Invalid quantity" });
-    }
+        if (quantity <= 0 || quantity > product.availableQuantity) {
+          return res.status(400).send({ message: "Invalid quantity" });
+        }
 
-    // Save imported full product details to imports collection
-    const importData = {
-      productId: id,
-      name: product.name,
-      image: product.image,
-      price: product.price,
-      rating: product.rating,
-      originCountry: product.originCountry,
-      category: product.category,
-      importedQuantity: quantity,
-      userEmail, 
-      importedAt: new Date(),
-    };
+        // Save imported full product details to imports collection
+        const importData = {
+          productId: id,
+          name: product.name,
+          image: product.image,
+          price: product.price,
+          rating: product.rating,
+          originCountry: product.originCountry,
+          category: product.category,
+          importedQuantity: quantity,
+          userEmail,
+          importedAt: new Date(),
+        };
 
-    await importsCollection.insertOne(importData);
+        await importsCollection.insertOne(importData);
 
-    // Reduce available quantity in products collection
-    await productsCollection.updateOne(
-        { _id: new ObjectId(id) },
-        { $inc: { availableQuantity: -quantity } }
-      );
+        // Reduce available quantity in products collection
+        await productsCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $inc: { availableQuantity: -quantity } }
+        );
 
-    res.send({ message: "Imported successfully" });
-  } catch (error) {
-    // console.error(error);
-    res.status(500).send({ message: "Internal server error" });
-  }
-});
+        res.send({ message: "Imported successfully" });
+      } catch (error) {
+        // console.error(error);
+        res.status(500).send({ message: "Internal server error" });
+      }
+    });
 
-
-// GET - products with optional limit to 6
+    // GET - products with optional limit to 6
     app.get("/products", async (req, res) => {
       try {
         const limit = parseInt(req.query.limit) || 0;
@@ -118,10 +118,19 @@ app.post("/imports/:id", async (req, res) => {
       }
     });
 
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // GET - imported products by logged-in user email
+    app.get("/imports", async (req, res) => {
+      const { email } = req.query;
+      const result = await importsCollection
+        .find({ userEmail: email })
+        .toArray();
+      res.send(result);
+    });
+
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // await client.close();
   }
