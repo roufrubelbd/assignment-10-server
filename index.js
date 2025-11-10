@@ -23,11 +23,75 @@ async function run() {
   try {
     await client.connect();
 
+    // Define database and collections
     const database = client.db("businessHub");
     const productsCollection = database.collection("products");
     const importsCollection = database.collection("imports");
     const exportsCollection = database.collection("exports");
 
+
+    // POST - imports
+app.post("/imports/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { quantity, userEmail } = req.body;
+    const product = await productsCollection.findOne({ _id: new ObjectId(id) });
+
+    if (!product) {
+      return res.status(404).send({ message: "Product not found" });
+    }
+
+    if (quantity <= 0 || quantity > product.availableQuantity) {
+      return res.status(400).send({ message: "Invalid quantity" });
+    }
+
+    // Save imported full product details to imports collection
+    const importData = {
+      productId: id,
+      name: product.name,
+      image: product.image,
+      price: product.price,
+      rating: product.rating,
+      originCountry: product.originCountry,
+      category: product.category,
+      importedQuantity: quantity,
+      userEmail, 
+      importedAt: new Date(),
+    };
+
+    await importsCollection.insertOne(importData);
+
+    // Reduce available quantity in products collection
+    await productsCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $inc: { availableQuantity: -quantity } }
+      );
+
+    res.send({ message: "Imported successfully" });
+  } catch (error) {
+    // console.error(error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+});
+
+
+// GET - products with optional limit to 6
+    app.get("/products", async (req, res) => {
+      try {
+        const limit = parseInt(req.query.limit) || 0;
+        const products = await productsCollection
+          .find({})
+          .sort({ createdAt: -1 })
+          .limit(limit)
+          .toArray();
+        res.send(products);
+      } catch (err) {
+        // console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+
+    // GET - all products
     app.get("/products", async (req, res) => {
       try {
         const products = await productsCollection.find({}).toArray();
@@ -38,6 +102,7 @@ async function run() {
       }
     });
 
+    // GET - single product by ID
     app.get("/products/:id", async (req, res) => {
       try {
         const id = req.params.id;
