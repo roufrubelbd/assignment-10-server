@@ -127,6 +127,19 @@ async function run() {
       res.send(result);
     });
 
+    // DELETE - delete an imported product by ID
+    app.delete("/imports/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await importsCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+      if (result.deletedCount > 0) {
+        res.send({ success: true, message: "Product deleted successfully" });
+      } else {
+        res.status(404).send({ success: false, message: "Product not found" });
+      }
+    });
+
     // await client.db("admin").command({ ping: 1 });
     // console.log(
     //   "Pinged your deployment. You successfully connected to MongoDB!"
