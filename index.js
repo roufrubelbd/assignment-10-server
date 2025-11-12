@@ -29,6 +29,27 @@ async function run() {
     const importsCollection = database.collection("imports");
     const exportsCollection = database.collection("exports");
 
+    // POST - exports
+    app.post("/exports", async (req, res) => {
+      try {
+        const newProduct = req.body;
+        if (!newProduct.name || !newProduct.image) {
+          return res
+            .status(400)
+            .send({ success: false, message: "Missing fields" });
+        }
+
+        await exportsCollection.insertOne(newProduct);
+        await productsCollection.insertOne(newProduct);
+        res
+          .status(201)
+          .send({ success: true, message: "Product exported successfully" });
+      } catch (error) {
+        // console.error(error);
+        res.status(500).send({ success: false, message: "Server error" });
+      }
+    });
+
     // POST - imports
     app.post("/imports/:id", async (req, res) => {
       try {
