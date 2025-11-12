@@ -161,6 +161,64 @@ async function run() {
       }
     });
 
+    // GET - Exported products by logged-in user email
+    app.get("/exports", async (req, res) => {
+      const { email } = req.query;
+      const result = await exportsCollection
+        .find({ userEmail: email })
+        .toArray();
+      res.send(result);
+    });
+
+    // DELETE - delete an exported product by ID
+    app.delete("/exports/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await exportsCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+      await productsCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+      
+      if (result.deletedCount > 0) {
+        res.send({ success: true, message: "Product deleted successfully" });
+      } else {
+        res.status(404).send({ success: false, message: "Product not found" });
+      }
+    });
+
+    // UPDATE - exported product details info by modal and id
+    app.put("/exports/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const updatedProductInfo = req.body;
+
+        await productsCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updatedProductInfo }
+        );
+        const result = await exportsCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updatedProductInfo }
+        );
+
+        if (result.modifiedCount > 0) {
+          res.send({
+            success: true,
+            message: "Product updated successfully",
+          });
+        } else {
+          res.status(404).send({
+            success: false,
+            message: "Product not found or no change",
+          });
+        }
+      } catch (error) {
+        // console.error(error);
+        res.status(500).send({ success: false, message: "Server error" });
+      }
+    });
+
     // await client.db("admin").command({ ping: 1 });
     // console.log(
     //   "Pinged your deployment. You successfully connected to MongoDB!"
