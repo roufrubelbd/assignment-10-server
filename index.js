@@ -29,6 +29,49 @@ async function run() {
     const importsCollection = database.collection("imports");
     const exportsCollection = database.collection("exports");
 
+    // GET - products with optional limit to 6
+    app.get("/products", async (req, res) => {
+      try {
+        const limit = parseInt(req.query.limit) || 0;
+        const products = await productsCollection
+          .find({})
+          .sort({ createdAt: -1 })
+          .limit(limit)
+          .toArray();
+        res.send(products);
+      } catch (err) {
+        // console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+
+    // GET - all products
+    app.get("/products", async (req, res) => {
+      try {
+        const products = await productsCollection.find({}).toArray();
+        res.send(products);
+      } catch (err) {
+        // console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+
+    // GET - single product by ID
+    app.get("/products/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const product = await productsCollection.findOne({
+          _id: new ObjectId(id),
+        });
+        if (!product)
+          return res.status(404).send({ message: "Product not found" });
+        res.send(product);
+      } catch (err) {
+        // console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+
     // POST - exports
     app.post("/exports", async (req, res) => {
       try {
@@ -96,49 +139,6 @@ async function run() {
       }
     });
 
-    // GET - products with optional limit to 6
-    app.get("/products", async (req, res) => {
-      try {
-        const limit = parseInt(req.query.limit) || 0;
-        const products = await productsCollection
-          .find({})
-          .sort({ createdAt: -1 })
-          .limit(limit)
-          .toArray();
-        res.send(products);
-      } catch (err) {
-        // console.error(err);
-        res.status(500).send({ message: "Server error" });
-      }
-    });
-
-    // GET - all products
-    app.get("/products", async (req, res) => {
-      try {
-        const products = await productsCollection.find({}).toArray();
-        res.send(products);
-      } catch (err) {
-        // console.error(err);
-        res.status(500).send({ message: "Server error" });
-      }
-    });
-
-    // GET - single product by ID
-    app.get("/products/:id", async (req, res) => {
-      try {
-        const id = req.params.id;
-        const product = await productsCollection.findOne({
-          _id: new ObjectId(id),
-        });
-        if (!product)
-          return res.status(404).send({ message: "Product not found" });
-        res.send(product);
-      } catch (err) {
-        // console.error(err);
-        res.status(500).send({ message: "Server error" });
-      }
-    });
-
     // GET - imported products by logged-in user email
     app.get("/imports", async (req, res) => {
       const { email } = req.query;
@@ -179,7 +179,7 @@ async function run() {
       await productsCollection.deleteOne({
         _id: new ObjectId(id),
       });
-      
+
       if (result.deletedCount > 0) {
         res.send({ success: true, message: "Product deleted successfully" });
       } else {
