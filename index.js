@@ -34,7 +34,7 @@ async function run() {
       try {
         const limit = parseInt(req.query.limit) || 0;
         const products = await productsCollection
-          .find({})
+          .find()
           .sort({ createdAt: -1 })
           .limit(limit)
           .toArray();
@@ -48,7 +48,7 @@ async function run() {
     // GET - all products
     app.get("/products", async (req, res) => {
       try {
-        const products = await productsCollection.find({}).toArray();
+        const products = await productsCollection.find().toArray();
         res.send(products);
       } catch (err) {
         // console.error(err);
